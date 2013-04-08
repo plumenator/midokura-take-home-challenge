@@ -1,12 +1,12 @@
-#import <stdio.h>
-#import <assert.h>
-
 /* Assumption: Root node has parent set to NULL.
    Time complexity: log N (actual worst case time 5 * log N)
    Space complexity: log N (actual worst case memory 4 * log N bytes, not counting the stack frames,
                             constant memory, if tail calls are optimized
    Approx time taken to complete: 70 minutes
 */
+
+#import <stdio.h>
+#import <assert.h>
 
 typedef struct TreeNode {
   struct TreeNode *parent;
