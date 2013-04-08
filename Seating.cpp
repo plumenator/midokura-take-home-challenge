@@ -1,5 +1,10 @@
-#include <assert.h>
+// Time complexity
+// ---------------
+// arrives():  less than or equal to max_size
+// leaves():   O(n)
+// locate():   constant time, groups have a reference to the table
 
+#include <assert.h>
 #include <vector>
 
 using namespace std;
