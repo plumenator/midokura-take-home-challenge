@@ -6,9 +6,16 @@ using namespace std;
 
 const int max_size = 6;
 
+class Table;
+
 class CustomerGroup {
 public:
   const int size; //number of people in the group
+  Table *table;
+  CustomerGroup (int newSize) : size(newSize), table(NULL) {
+  }
+  ~CustomerGroup () {
+  }
 };
 
 class Table {
@@ -41,22 +48,19 @@ public:
     
     empty -= group->size;
     groups.push_back(group);
+    group->table = this;
   }
   void unseat(CustomerGroup *group) {
     assert(size >= empty + group->size);
     
     empty += group->size;
-    int j = -1;
     for(int i = 0; i < groups.size(); ++i)  {
       if (groups[i] == group)
 	{
-	  j = i;
-	  break;
+	  groups.erase(groups.begin() + i);
+	  group->table = NULL;
 	}
     }
-
-    assert (j > 0);
-    groups.erase(groups.begin() + j);
   }
   
 private:
@@ -119,6 +123,7 @@ void SeatingManager::leaves(CustomerGroup *group) {
 	{
 	  if (waiting[i]->size <= theirTable->available())
 	    {
+	      waiting.erase(waiting.begin() + i);
 	      seat(theirTable, waiting[i]);
 	      break;
 	    }
@@ -131,18 +136,7 @@ void SeatingManager::leaves(CustomerGroup *group) {
 }
 
 Table *SeatingManager::locate(CustomerGroup *group) {
-  for (int i = 0; i <= max_size; ++i)
-    {
-      for (int j = 0; j < empty[i].size(); ++j)
-	{
-	  if (empty[i][j]->hasGroup(group))
-	    {
-	      return empty[i][j];
-	    }
-	}
-    }
-  
-  return NULL;
+  return group->table;
 }
 
 Table *SeatingManager::findEmpty(int size) {
@@ -156,7 +150,6 @@ Table *SeatingManager::findEmpty(int size) {
 }
 
 void SeatingManager::seat(Table *emptyTable, CustomerGroup *group) {
-  dequeue(group);
   int index = emptyTable->available();
   assert (empty[index][0] == emptyTable);
   empty[index].erase(empty[index].begin());
