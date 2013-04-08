@@ -3,6 +3,7 @@
 // arrives():  less than or equal to max_size
 // leaves():   O(n)
 // locate():   constant time, groups have a reference to the table
+// Memory usage: O(nCm), where n is the number of tables and m is the number of groups on each table, C is the combination symbol
 
 #include <assert.h>
 #include <vector>
