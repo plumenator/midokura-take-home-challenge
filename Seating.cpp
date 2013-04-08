@@ -1,7 +1,6 @@
 #include <assert.h>
 
 #include <vector>
-#include <queue>
 
 using namespace std;
 
@@ -24,8 +23,16 @@ public:
   int available() {
     return empty;
   }
-  CustomerGroup *customerGroup(int index) {
-    return groups[index];
+  bool hasGroup(const CustomerGroup *group) {
+    for (int i = 0; i < groups.size(); ++i)
+      {
+	if (group == groups[i])
+	  {
+	    return true;
+	  }
+      }
+    
+    return false;
   }
   void seat(CustomerGroup *group) {
     assert(size >= group->size);
@@ -120,14 +127,11 @@ Table *SeatingManager::locate(CustomerGroup *group) {
 	{
 	  if (empty[i][j]->size < group->size)
 	    continue;
-      
-	  for (int k = 0; k < empty[i][j]->occupied(); ++k)
+
+	  if (empty[i][j]->hasGroup(group))
 	    {
-	      if (group == empty[i][j]->customerGroup(k))
-		{
-		  theirTable = empty[i][j];
-		  break;
-		}
+	      theirTable = empty[i][j];
+	      break;
 	    }
 	}
     }
