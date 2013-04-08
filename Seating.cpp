@@ -15,15 +15,17 @@ class Table {
 public:
   const int size; //number of chairs around this table
 
-  Table(int newSize) : size(newSize), empty(0) {
+  Table(int newSize) : size(newSize), empty(size) {
   }
-  int occupied() {
-    return size-empty;
+  ~Table() {
   }
   int available() {
     return empty;
   }
   bool hasGroup(const CustomerGroup *group) {
+    if (size - empty < group->size)
+      return false;
+    
     for (int i = 0; i < groups.size(); ++i)
       {
 	if (group == groups[i])
@@ -35,14 +37,17 @@ public:
     return false;
   }
   void seat(CustomerGroup *group) {
-    assert(size >= group->size);
+    assert(empty <= group->size);
+    
     empty -= group->size;
     groups.push_back(group);
   }
   void unseat(CustomerGroup *group) {
+    assert(size >= empty + group->size);
+    
     empty += group->size;
     int j = -1;
-    for(int i = 0; i != groups.size(); ++i)  {
+    for(int i = 0; i < groups.size(); ++i)  {
       if (groups[i] == group)
 	{
 	  j = i;
@@ -50,10 +55,8 @@ public:
 	}
     }
 
-    if (j > 0)
-      {
-	groups.erase(groups.begin() + j);
-      }
+    assert (j > 0);
+    groups.erase(groups.begin() + j);
   }
   
 private:
@@ -86,7 +89,7 @@ private:
 };
 
 SeatingManager::SeatingManager(vector<Table *> tables) {
-  for(int i = 0; i != tables.size(); ++i)  {
+  for(int i = 0; i < tables.size(); ++i)  {
     empty[tables[i]->size].push_back(tables[i]);
   }
 }
@@ -111,6 +114,15 @@ void SeatingManager::leaves(CustomerGroup *group) {
   if (theirTable)
     {
       unseat(theirTable, group);
+      
+      for (int i = 0; i < waiting.size(); ++i)
+	{
+	  if (waiting[i]->size <= theirTable->available())
+	    {
+	      seat(theirTable, waiting[i]);
+	      break;
+	    }
+	}
     }
   else
     {
@@ -119,36 +131,34 @@ void SeatingManager::leaves(CustomerGroup *group) {
 }
 
 Table *SeatingManager::locate(CustomerGroup *group) {
-  Table *theirTable = NULL;
-
   for (int i = 0; i <= max_size; ++i)
     {
       for (int j = 0; j < empty[i].size(); ++j)
 	{
-	  if (empty[i][j]->size < group->size)
-	    continue;
-
 	  if (empty[i][j]->hasGroup(group))
 	    {
-	      theirTable = empty[i][j];
-	      break;
+	      return empty[i][j];
 	    }
 	}
     }
   
-  return theirTable;
+  return NULL;
 }
 
 Table *SeatingManager::findEmpty(int size) {
-  if (empty[size].size() == 0)
-    return NULL;
-
-  return empty[size][0];
+  for (int i = size; i <= max_size; ++i)
+    {
+      if (empty[i].size() > 0)
+	return empty[size][0];
+    }
+  
+  return NULL;
 }
 
 void SeatingManager::seat(Table *emptyTable, CustomerGroup *group) {
   dequeue(group);
   int index = emptyTable->available();
+  assert (empty[index][0] == emptyTable);
   empty[index].erase(empty[index].begin());
   emptyTable->seat(group);
   empty[emptyTable->available()].push_back(emptyTable);
@@ -156,23 +166,24 @@ void SeatingManager::seat(Table *emptyTable, CustomerGroup *group) {
 
 void SeatingManager::unseat(Table *theirTable, CustomerGroup *group) {
   int index = theirTable->available();
-  empty[index].erase(empty[index].begin());
+  for (int i = 0; i < empty[index].size(); ++i)
+    {
+      if (empty[index][i] == theirTable)
+	{
+	  empty[index].erase(empty[index].begin() + i);
+	  break;
+	}
+    }
   theirTable->unseat(group);
   empty[theirTable->available()].push_back(theirTable);
 }
 
 void SeatingManager::dequeue(CustomerGroup *group) {
-  int j = -1;
-  for(int i = 0; i != waiting.size(); ++i)  {
+  for (int i = 0; i < waiting.size(); ++i)  {
     if (waiting[i] == group)
       {
-	j = i;
-	break;
+	waiting.erase(waiting.begin() + i);
+	return;
       }
   }
-
-  if (j > 0)
-    {
-      waiting.erase(waiting.begin() + j);
-    }
 }
